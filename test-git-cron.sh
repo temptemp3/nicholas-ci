@@ -2,6 +2,7 @@
 ## test-git-cron
 ## version 0.0.2 - initialize as alias
 ##################################################
+. ${SH2}/cecho.sh &>/dev/null
 shopt -s expand_aliases
 alias bind-variables='
 {
@@ -9,7 +10,9 @@ alias bind-variables='
 }
 '
 alias initialize='
-  log="var/log/${FUNCNAME}"
+  test "${log}" || { 
+    log="var/log/${FUNCNAME}"
+  }
   test -d "${log}" || {
     mkdir -pv "${log}"
   }
@@ -19,11 +22,17 @@ repos() {
 }
 test-git-ssh() {
   (
+    date
     cd ${1}
     pwd
-    git branch
-    bash ~/$( dirname ${0} )/${FUNCNAME}.sh
-  )
+    /usr/local/bin/git branch
+    /usr/local/bin/bash $( dirname ${0} )/${FUNCNAME}.sh 
+  ) > ${FUNCNAME}-response
+  test ! "$( grep -e 'Updating' ${FUNCNAME}-response )" || {
+    cat ${FUNCNAME}-response |
+    tee -a ${log}/log 2>> ${log}/error
+    cecho yellow "$( rm -v ${FUNCNAME}-response ) removed"
+  }
 }
 for-each-repo() { { local function_name ; function_name="${1}" ; }
   local repo
@@ -34,15 +43,14 @@ for-each-repo() { { local function_name ; function_name="${1}" ; }
 }
 main() {
   {
-    date
     for-each-repo test-git-ssh
-  } | tee -a ${log}/log 2>> ${log}/error
+  } 
 }
 test-git-cron() {
-  test ! -f "${FUNCNAME}-config.sh" || {
-    . ${FUNCNAME}-config.sh
+  test ! -f "$( dirname ${0} )/${FUNCNAME}-config.sh" || {
+    . $( dirname ${0} )/${FUNCNAME}-config.sh
   }
-  bind-variables
+  #bind-variables
   ## ToDo: lock
   initialize
   ## ToDo: log rotation
