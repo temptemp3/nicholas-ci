@@ -5,10 +5,12 @@ Primitative continuous integration
 
 ```
 {
+  test -d "~/bin/sh2" || {
+    git clone https://github.com/temptemp3/sh2.git -b working ~/bin/sh2
+  }
   test -d "~/bin/nicholas-ci" || {
     git clone https://github.com/temptemp3/nicholas-ci.git -b sakura ~/bin/nicholas-ci
-  }
-  
+  }  
   touch ~/.bashrc
   test "$( grep -e SH2 ~/.bashrc )" || {
     cat >> ~/.bashrc << EOF
